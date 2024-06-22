@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Utils\Validator;
 use Exception;
+use PDOExeption;
+use App\Models\User;
 
 class UserService {
     public static function create(array $data) {
@@ -13,7 +15,14 @@ class UserService {
                 'email'     =>$data['email']    ?? '',
                 'password'  =>$data['password'] ?? ''
             ]);
-            return $fields;
+            $user = User::save($fields);
+
+            if (!$user) return ['error' => 'Sorry, we could not create yor account.'];
+
+            return "User created successfully!";
+        }
+        catch (PDOExeption $e) {
+            return ['error' => $e->getMessage()];
         }
         catch (\Exception $e) {
             return ['error' => $e->getMessage()];

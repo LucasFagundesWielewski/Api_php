@@ -10,14 +10,14 @@ class UserController
 {
     public function store(Request $request, Response $response)
     {
-        $body = $request::body();
+        $body = Request::body();
 
         $userService = UserService::create($body);
 
         if (isset($userService['error'])) {
             return $response::json([
                 'error'     =>true,
-                'sucess'    =>false,
+                'sucsess'   =>false,
                 'message'   =>$userService['error']
             ], 400);
         }
