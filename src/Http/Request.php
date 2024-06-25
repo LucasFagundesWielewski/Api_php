@@ -20,4 +20,16 @@ class Request
 
         return $data;
     }
+
+    public static function authorization() {
+
+        $authorization = getallheaders();
+
+        if (!isset($authorization['Authorization'])) return false;
+
+        $authorizationPartials = explode(' ', $authorization['Authorization']);
+
+        return $authorizationPartials;
+
+    }
 }

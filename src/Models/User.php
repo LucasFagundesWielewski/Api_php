@@ -1,47 +1,111 @@
-<?php
+<?php 
 
 namespace App\Models;
 
-use mysqli;
+use App\Models\Database;
+use PDO;
 
-class User extends Database {
-    public static function save(array $data) {
-        $conn = self::getConnection();
+class User extends Database
+{
+    public static function save(array $data)
+    {
+        $pdo = self::getConnection();
 
-        $stmt = $conn->prepare("
-            INSERT INTO users (name, email, password)
-            VALUES (?, ?, ?)
+        $stmt = $pdo->prepare("
+            INSERT 
+            INTO 
+                users (name, email, password)
+            VALUES
+                (?, ?, ?)
         ");
-        $stmt->bind_param("sss", $data['name'], $data['email'], $data['password']);
-        $stmt->execute();
 
-        return $stmt->affected_rows > 0;
+        $stmt->execute([
+            $data['name'],
+            $data['email'],
+            $data['password'],
+        ]);
+
+        return $pdo->lastInsertId() > 0 ? true : false;
     }
 
-    public static function findByEmail($email) {
-        $conn = self::getConnection();
+    public static function authentication(array $data)
+    {
+        $pdo = self::getConnection();
 
-        $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
+        $stmt = $pdo->prepare("
+            SELECT 
+                *
+            FROM 
+                users
+            WHERE 
+                email = ?
+        ");
 
-        $result = $stmt->get_result();
-        return $result->fetch_assoc();
+        $stmt->execute([$data['email']]);
+
+        if ($stmt->rowCount() < 1) return false;
+
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!password_verify($data['password'], $user['password'])) return false;
+
+        return [
+            'id'   => $user['id'],
+            'name' => $user['name'],
+            'email'=> $user['email'],
+        ];
     }
 
-    public static function isPasswordUsed($password) {
-        $conn = self::getConnection();
+    public static function find(int|string $id)
+    {
+        $pdo = self::getConnection();
 
-        $stmt = $conn->prepare("SELECT password FROM users");
-        $stmt->execute();
+        $stmt = $pdo->prepare('
+            SELECT 
+                id, name, email
+            FROM 
+                users
+            WHERE 
+                id = ?
+        ');
 
-        $result = $stmt->get_result();
-        while ($user = $result->fetch_assoc()) {
-            if (password_verify($password, $user['password'])) {
-                return true;
-            }
-        }
+        $stmt->execute([$id]);
 
-        return false;
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public static function update(int|string $id, array $data)
+    {
+        $pdo = self::getConnection();
+        
+        $stmt = $pdo->prepare('
+            UPDATE 
+                users
+            SET 
+                name = ?
+            WHERE 
+                id = ?
+        ');
+
+        $stmt->execute([$data['name'], $id]);
+
+        return $stmt->rowCount() > 0 ? true : false;
+    }
+
+    public static function delete(int|string $id)
+    {
+        $pdo = self::getConnection();
+
+        $stmt = $pdo->prepare('
+            DELETE 
+            FROM 
+                users
+            WHERE 
+                id = ?
+        ');
+
+        $stmt->execute([$id]);
+
+        return $stmt->rowCount() > 0 ? true : false;
     }
 }
